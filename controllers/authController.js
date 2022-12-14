@@ -10,8 +10,7 @@ const jwt = require("jsonwebtoken");
 // });
 exports.homepage = async (req, res, next) => {
   res.json({
-    message: "Reached home page succesfully",
-    // user: req.user,
+    message: "Reached home page successfully",
     user: "You",
   });
 };
