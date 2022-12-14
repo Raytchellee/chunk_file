@@ -7,16 +7,16 @@ const fileSplitter = async (req, res, next) => {
   //get extension name, file content, size
 
   const { size, file } = req.body;
-  console.log("REQ BODYYYYY", req.body);
-  console.log("REQ BODYYYYY", JSON.stringify(req.body));
-  console.log("REQ BODYYYYY", JSON.stringify(req.body["form-data"]));
+  //   console.log("REQ BODYYYYY", req.body);
+  //   console.log("REQ BODYYYYY", JSON.stringify(req.body));
+  //   console.log("REQ BODYYYYY", JSON.stringify(req.body["form-data"]));
 
   async function createList() {
     const processedJson = [];
     const csvToJsonParsing = new Promise(function (resolve, reject) {
       // fs.createReadStream("100000 Sales Records.csv")
-      console.log("createlist here");
-      console.log("file here", file);
+      //   console.log("createlist here");
+      //   console.log("file here", file);
       //   fs.createReadStream(file)
       fs.createReadStream("data.json")
         .pipe(csv({ separator: "," }))
@@ -26,14 +26,14 @@ const fileSplitter = async (req, res, next) => {
         .on("end", () => {
           resolve();
         });
-      console.log("find thy error");
+      //   console.log("find thy error");
     });
 
-    console.log("createlist here 2");
+    // console.log("createlist here 2");
 
     await csvToJsonParsing;
-    console.log("createlist here 3");
-    console.log("createlist here 4", processedJson);
+    // console.log("createlist here 3");
+    // console.log("createlist here 4", processedJson);
 
     return processedJson;
   }
