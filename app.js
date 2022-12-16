@@ -5,50 +5,31 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 // const logger = require("morgan");
 
-// console.log("express======", express);
-
 require("./services/auth.service");
-
 const routes = require("./routes/routes");
 const secureRoute = require("./routes/secure-routes");
-
-// const express = require("express");
-// const mongoose = require("mongoose");
-// const bodyParser = require("body-parser");
-// const userModel = require("./model/user.schema");
-
 const connect = require("./utils/database");
-connect();
 
+connect();
 const app = express();
 
 // view engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "jade");
-
+// app.set("views", path.join(__dirname, "views"));
+// app.set("view engine", "jade");
 // app.use(logger("dev"));
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-// app.use(bodyParser());
-
-// app.use("/", indexRouter);
-// app.use("/users", usersRouter);
 
 app.use("/", routes);
 
 // Plug in the JWT strategy as a middleware so only verified users can access this route.
-// app.use("/user", passport.authenticate("jwt", { session: false }), secureRoute);
 app.use(
   "/api/v1/users",
   passport.authenticate("jwt", { session: false }),
   secureRoute
 );
-
-// // catch 404 and forward to error handler
-// app.use(function (req, res, next) {
-//   next(createError(404));
-// });
 
 // error handler
 app.use(function (err, req, res, next) {

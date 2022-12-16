@@ -1,9 +1,12 @@
 const mongoose = require("mongoose");
+const { Schema, model } = require("mongoose");
 
-const fileSchema = new mongoose.Schema({
+const fileSchema = new Schema({
   fileName: String,
   fileExtension: String,
   chunks: [Buffer],
 });
 
-module.exports = fileSchema;
+const fileModel = model("fileModel", fileSchema);
+// module.exports = fileModel;
+module.exports = { fileSchema, fileModel };

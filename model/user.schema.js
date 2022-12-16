@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const { Schema, model } = require("mongoose");
-const fileSchema = require("./file.schema");
+const { fileSchema } = require("./file.schema");
 const bcrypt = require("bcrypt");
 
 const userSchema = new Schema(

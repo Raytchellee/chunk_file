@@ -5,8 +5,8 @@ const multer = require("multer");
 const upload = multer();
 
 const { signup, login, homepage } = require("../controllers/authController");
-// const fileSplitter = require("../controllers/fileController");
-const fileSplitter = require("../services/fileSplitter.service");
+// const fileSplitter = require("../services/fileSplitter.service");
+const fileSplitter = require("../services/user.service");
 
 const router = express.Router();
 
@@ -23,6 +23,7 @@ router.post(
 // ...
 router.post("/login", login);
 
-router.post("/files", upload.any(), fileSplitter);
+// router.post("/files/:id", upload.any(), fileSplitter);
+router.post("/files/:id", fileSplitter);
 
 module.exports = router;

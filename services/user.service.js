@@ -1,83 +1,95 @@
-// const fs = require("fs");
-// const csv = require("csv-parser");
-// const fastcsv = require("fast-csv");
+const fs = require("fs");
+const csv = require("csv-parser");
+const fastcsv = require("fast-csv");
+const multer = require("multer");
+const userModel = require("../model/user.schema");
+const { fileModel } = require("../model/file.schema");
 
-// async function createList() {
-//   const processedJson = [];
-//   const csvToJsonParsing = new Promise(function (resolve, reject) {
-//     fs.createReadStream("100000 Sales Records.csv")
-//       .pipe(csv({ separator: "," }))
-//       .on("data", (data) => {
-//         processedJson.push(data);
-//       })
-//       .on("end", () => {
-//         resolve();
-//       });
-//   });
+const bodyParser = require("body-parser");
+const { Module } = require("module");
 
-//   await csvToJsonParsing;
-//   return processedJson;
-// }
+const fileSplitter = async (req, res, next) => {
+  //   app.post("/data/:id", (req, res) => {
+  // Array for holding individual chunks of data in data stream
+  console.log("body", req.body);
+  let arr = [];
+  //   let { chunkSize } = req.body;
 
-// async function fileSplitter(processedJson) {
-//   console.log("Splitting original file...");
-//   let startingPoint = 0;
-//   let linesWritten = 0;
-//   const chunkSize = 5000;
-//   console.log(processedJson.length);
+  let chunkSize = 64 * 1024;
 
-//   // this reprenents the number of files the original file will be broken into
-//   numChunks = Math.ceil(processedJson.length / chunkSize);
+  // id that will be used to save the data in memcached library
+  //   let id = req.params.id;
+  //   try {
+  let id = { _id: req.params.id };
+  //     console.log("id:", id);
+  //     let user = await userModel.findById(id);
+  //     if (!user) {
+  //       return res.status(404).send("No user with matching id found!");
+  //     }
+  //     res.status(200).json({
+  //       success: true,
+  //       message: "USER FOUND!",
+  //       user,
+  //     });
+  //   } catch (error) {
+  //     res.status(500).json({
+  //       success: false,
+  //       message: "Internal server error",
+  //       error: e.message,
+  //     });
+  //   }
 
-//   for (let i = 0; i < numChunks; i++) {
-//     if (linesWritten >= processedJson.length) {
-//       break;
-//     }
+  //   event listener for incoming data
+  req.on("data", (chunk) => {
+    // add chunk to array
+    arr.push(chunk);
 
-//     // the data that will get written into the current smaller file
-//     const jsonChunk = [];
+    console.log(`Number of chunks in byte stream: ${arr.length}`);
+  });
 
-//     for (let j = startingPoint; j < startingPoint + chunkSize; j++) {
-//       jsonChunk.push(processedJson[j]);
-//       if (j < processedJson.length) {
-//         linesWritten++;
-//         // if we've reached the chunk increment, increase the starting point to the next increment
-//         if (j == startingPoint + chunkSize - 1) {
-//           startingPoint = j + 1;
+  // event listener for end of data processing
+  req.on("end", async () => {
+    console.log("all chunks came through");
+    const file = Buffer.concat(arr);
+    // const readStream = fs.createReadStream(file, { highWaterMark: chunkSize });
+    let tempChunks = [];
+    const rechunkedFile = [];
+    const numOfBytePerChunk = chunkSize / 1024;
+    let counted = 1;
+    let iterations = 0;
+    for (const byte of file.values()) {
+      tempChunks.push(byte);
+      if (
+        counted == numOfBytePerChunk ||
+        file.values().length - 1 == iterations
+      ) {
+        const temp = Buffer.from(tempChunks);
+        rechunkedFile.push(temp);
+        tempChunks = [];
+        counted = 1;
+        iterations++;
+        continue;
+      }
+      counted++;
+      iterations++;
+    }
 
-//           // file chunk to be written
-//           const writeStream = await fs.createWriteStream("file-" + i + ".csv");
-//           const options = { headers: true };
-//           const generateCsv = fastcsv.write(jsonChunk, options);
-//           generateCsv.pipe(writeStream);
-//           const jsonToCsv = new Promise(function (resolve, reject) {
-//             generateCsv
-//               .on("error", function (err) {
-//                 reject(err);
-//               })
-//               .on("end", function () {
-//                 resolve();
-//               });
-//           });
-//           await jsonToCsv;
-//           break;
-//         }
-//       }
-//     }
-//   }
-//   console.log("File split complete ...");
-// }
+    // readStream.on("data", (chunk) => {
+    //   rechunkedFile.push(chunk);
+    // });
 
-// async function driver() {
-//   console.log("**** FILE SPLITTER ****");
+    // readStream.on("end", async () => {
+    const savedFile = await fileModel.create({ chunks: rechunkedFile });
+    await userModel.findByIdAndUpdate(id, { $push: { files: savedFile } });
+    res.send({ status: "success!!", key: `${id}` });
+    // });
 
-//   // get JSON Array of all lines in original file
-//   const fileLines = await createList();
+    // send response to client side.
+  });
+  //   });
 
-//   // split into multiple smaller files with original list of lines
-//   await fileSplitter(fileLines);
-
-//   console.log("**** FILE SPLITTER COMPLETE ****");
-// }
-
-// driver();
+  //   app.get("/data/:id", async (req, res) => {
+  //     let id = req.params.id;
+  //   });
+};
+module.exports = fileSplitter;

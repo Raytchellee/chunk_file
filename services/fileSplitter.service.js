@@ -3,13 +3,14 @@ const csv = require("csv-parser");
 const fastcsv = require("fast-csv");
 const multer = require("multer");
 
+const bodyParser = require("body-parser");
+
 const fileSplitter = async (req, res, next) => {
   //get extension name, file content, size
 
   const { size, file } = req.body;
-  //   console.log("REQ BODYYYYY", req.body);
-  //   console.log("REQ BODYYYYY", JSON.stringify(req.body));
-  //   console.log("REQ BODYYYYY", JSON.stringify(req.body["form-data"]));
+  console.log("REQ BODYYYYY", req.body);
+  console.log("REQ BODYYYYY", JSON.stringify(req.body));
 
   async function createList() {
     const processedJson = [];
@@ -32,7 +33,6 @@ const fileSplitter = async (req, res, next) => {
     // console.log("createlist here 2");
 
     await csvToJsonParsing;
-    // console.log("createlist here 3");
     // console.log("createlist here 4", processedJson);
 
     return processedJson;
@@ -42,9 +42,15 @@ const fileSplitter = async (req, res, next) => {
     console.log("Splitting original file...");
     let startingPoint = 0;
     let linesWritten = 0;
+    // let Chunkedfiles = [];
     // const chunkSize = 5000;
-    const chunkSize = size;
+    const chunkSize = Number(size) || 10;
     console.log(processedJson.length);
+
+    // if (processedJson.length <= chunkSize) {
+    //   Chunkedfiles.push(processedJson);
+    //   return;
+    // }
 
     // this reprenents the number of files the original file will be broken into
     numChunks = Math.ceil(processedJson.length / chunkSize);
@@ -55,14 +61,21 @@ const fileSplitter = async (req, res, next) => {
       }
 
       // the data that will get written into the current smaller file
-      const jsonChunk = [];
+      let jsonChunk = [];
 
       for (let j = startingPoint; j < startingPoint + chunkSize; j++) {
         jsonChunk.push(processedJson[j]);
+
         if (j < processedJson.length) {
           linesWritten++;
           // if we've reached the chunk increment, increase the starting point to the next increment
-          if (j == startingPoint + chunkSize - 1) {
+          if (
+            j == startingPoint + chunkSize - 1 ||
+            linesWritten + 1 >= processedJson.length
+          ) {
+            Chunkedfiles.push(
+              jsonChunk.slice(startingPoint, startingPoint + chunkSize)
+            );
             startingPoint = j + 1;
 
             // file chunk to be written
@@ -82,6 +95,7 @@ const fileSplitter = async (req, res, next) => {
                 });
             });
             await jsonToCsv;
+            // console.log("jsonChunk", jsonChunk);
             break;
           }
         }
